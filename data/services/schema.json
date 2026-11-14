@@ -1,0 +1,31 @@
+[ {
+  "name" : "id",
+  "type" : "INTEGER",
+  "primaryKey" : true,
+  "notNull" : true
+}, {
+  "name" : "car_id",
+  "type" : "INTEGER",
+  "primaryKey" : false,
+  "notNull" : false
+}, {
+  "name" : "service_type",
+  "type" : "STRING",
+  "primaryKey" : false,
+  "notNull" : false
+}, {
+  "name" : "cost",
+  "type" : "FLOAT",
+  "primaryKey" : false,
+  "notNull" : false
+}, {
+  "name" : "service_date",
+  "type" : "DATE",
+  "primaryKey" : false,
+  "notNull" : false
+}, {
+  "name" : "completed",
+  "type" : "BOOLEAN",
+  "primaryKey" : false,
+  "notNull" : false
+} ]

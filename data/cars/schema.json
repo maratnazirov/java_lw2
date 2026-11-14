@@ -1,0 +1,31 @@
+[ {
+  "name" : "id",
+  "type" : "INTEGER",
+  "primaryKey" : true,
+  "notNull" : true
+}, {
+  "name" : "brand",
+  "type" : "STRING",
+  "primaryKey" : false,
+  "notNull" : false
+}, {
+  "name" : "price",
+  "type" : "FLOAT",
+  "primaryKey" : false,
+  "notNull" : false
+}, {
+  "name" : "owner_id",
+  "type" : "INTEGER",
+  "primaryKey" : false,
+  "notNull" : false
+}, {
+  "name" : "active",
+  "type" : "BOOLEAN",
+  "primaryKey" : false,
+  "notNull" : false
+}, {
+  "name" : "reg_date",
+  "type" : "DATE",
+  "primaryKey" : false,
+  "notNull" : false
+} ]

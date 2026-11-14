@@ -1,0 +1,16 @@
+[ {
+  "name" : "id",
+  "type" : "INTEGER",
+  "primaryKey" : true,
+  "notNull" : true
+}, {
+  "name" : "full_name",
+  "type" : "STRING",
+  "primaryKey" : false,
+  "notNull" : false
+}, {
+  "name" : "phone",
+  "type" : "STRING",
+  "primaryKey" : false,
+  "notNull" : false
+} ]

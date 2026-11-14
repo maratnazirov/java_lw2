@@ -1,0 +1,21 @@
+# Скомпилированные артефакты сборщика Maven
+target/
+*.class
+
+# Логи и временные файлы тестирования
+*.log
+test-data-*/
+test-data-e2e/
+
+# Настройки IDE (IntelliJ IDEA, Eclipse, VS Code)
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+
+# Служебные файлы операционных систем
+Thumbs.db
+Desktop.ini
+.DS_Store

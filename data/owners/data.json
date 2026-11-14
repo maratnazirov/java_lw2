@@ -1,0 +1,41 @@
+[ {
+  "id" : 1,
+  "full_name" : "Ivan Ivanov",
+  "phone" : "+79991112233"
+}, {
+  "id" : 2,
+  "full_name" : "Petr Petrov",
+  "phone" : "+79994445566"
+}, {
+  "id" : 3,
+  "full_name" : "Anna Smirnova",
+  "phone" : "+79161234567"
+}, {
+  "id" : 4,
+  "full_name" : "Dmitry Kozlov",
+  "phone" : "+79219876543"
+}, {
+  "id" : 5,
+  "full_name" : "Elena Vasilyeva",
+  "phone" : "+79035557788"
+}, {
+  "id" : 6,
+  "full_name" : "Sergey Morozov",
+  "phone" : "+79183332211"
+}, {
+  "id" : 7,
+  "full_name" : "Maria Fedorova",
+  "phone" : "+79264448899"
+}, {
+  "id" : 8,
+  "full_name" : "Alexey Novikov",
+  "phone" : "+79051113355"
+}, {
+  "id" : 9,
+  "full_name" : "Olga Popova",
+  "phone" : "+79117779922"
+}, {
+  "id" : 10,
+  "full_name" : "Mikhail Sokolov",
+  "phone" : "+79852226644"
+} ]

@@ -1,0 +1,26 @@
+[ {
+  "indexName" : "idx_cars_brand",
+  "tableName" : "cars",
+  "columnName" : "brand",
+  "indexType" : "TREE"
+}, {
+  "indexName" : "idx_serv_cost",
+  "tableName" : "services",
+  "columnName" : "cost",
+  "indexType" : "TREE"
+}, {
+  "indexName" : "idx_cars_owner",
+  "tableName" : "cars",
+  "columnName" : "owner_id",
+  "indexType" : "TREE"
+}, {
+  "indexName" : "idx_cars_price",
+  "tableName" : "cars",
+  "columnName" : "price",
+  "indexType" : "TREE"
+}, {
+  "indexName" : "idx_serv_car",
+  "tableName" : "services",
+  "columnName" : "car_id",
+  "indexType" : "TREE"
+} ]
