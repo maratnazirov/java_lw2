@@ -10,6 +10,13 @@ public class ResultPrinter {
 
     private ResultPrinter() { }
 
+    /**
+     * Форматирует результат выполнения запроса {@link QueryResult} в виде ASCII-таблицы.
+     * При наличии ошибок или отсутствии строк возвращает текстовое сообщение.
+     *
+     * @param result результат выполнения запроса
+     * @return отформатированная строка с псевдографической таблицей
+     */
     public static String format(QueryResult result) {
         if (!result.isSuccess()) {
             return "ERROR: " + result.getMessage();
@@ -53,6 +60,14 @@ public class ResultPrinter {
         System.out.println(format(result));
     }
 
+    /**
+     * Вычисляет максимальную ширину отображения для каждой колонки
+     * с учетом длины заголовка и содержимого всех строк.
+     *
+     * @param headers имена колонок
+     * @param rows    список строк данных
+     * @return массив целочисленных ширин для каждой колонки
+     */
     private static int[] computeWidths(List<String> headers, List<Row> rows) {
         int n = headers.size();
         int[] widths = new int[n];

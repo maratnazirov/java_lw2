@@ -30,6 +30,13 @@ public class ConsoleRepl {
         loadDatabase();
     }
 
+    /**
+     * Загружает все таблицы из постоянного JSON-хранилища в оперативную память каталога,
+     * восстанавливает и перестраивает индексы, а при отсутствии необходимых таблиц
+     * инициализирует базу данных демонстрационными данными.
+     *
+     * @throws IOException при ошибках чтения файлов хранилища
+     */
     private void loadDatabase() throws IOException {
         List<Table> tables = storage.loadAll();
         for (Table t : tables) {
@@ -48,6 +55,14 @@ public class ConsoleRepl {
                 + String.join(", ", db.getTableNames()) + RESET);
     }
 
+    /**
+     * Создает и заполняет демонстрационные таблицы 'owners', 'cars' и 'services' тестовыми данными
+     * и строит соответствующие индексы (деревья поиска).
+     *
+     * @param db           каталог базы данных
+     * @param storage      менеджер сохранения данных
+     * @param indexManager менеджер индексов
+     */
     static void seedDefault(Database db, StorageManager storage, IndexManager indexManager) {
         try {
             System.out.println("  Initializing default sample tables (cars, owners, services)...");
@@ -181,6 +196,11 @@ public class ConsoleRepl {
         table.addRowUnchecked(r);
     }
 
+    /**
+     * Запускает главный интерактивный цикл консольного REPL.
+     * Обрабатывает многострочный ввод SQL, системные команды управления (HELP, RESET, SHOW TABLES, EXIT)
+     * и передает готовые запросы на исполнение.
+     */
     public void run() {
         printBanner();
         Scanner scanner = new Scanner(System.in);
@@ -255,6 +275,11 @@ public class ConsoleRepl {
                 || u.startsWith("DESC");
     }
 
+    /**
+     * Выполняет парсинг и исполнение введенной команды SQL с выводом результата в консоль.
+     *
+     * @param sql строка SQL-запроса
+     */
     private void executeInput(String sql) {
         try {
             Statement stmt   = parser.parse(sql);

@@ -2,7 +2,10 @@ package com.minidb;
 
 import java.util.*;
 
-// B-Tree индекс на базе TreeMap для диапазонных запросов O(log N)
+/**
+ * Древовидный B-Tree аналог индекса на базе сбалансированного красно-черного дерева (TreeMap).
+ * Обеспечивает логарифмическую сложность поиска O(log N) и эффективные диапазонные выборки.
+ */
 public class TreeIndex implements Index {
 
     private final String tableName;
@@ -11,6 +14,13 @@ public class TreeIndex implements Index {
     @SuppressWarnings("rawtypes")
     private final TreeMap<Comparable, List<Integer>> map;
 
+    /**
+     * Создает древовидный индекс с кастомным компаратором,
+     * умеющим корректно сравнивать различные числовые типы (Integer и Double) и даты.
+     *
+     * @param tableName имя таблицы
+     * @param columnName индексируемая колонка
+     */
     @SuppressWarnings({"rawtypes", "unchecked"})
     public TreeIndex(String tableName, String columnName) {
         this.tableName  = tableName.toLowerCase();
@@ -39,6 +49,12 @@ public class TreeIndex implements Index {
         return columnName;
     }
 
+    /**
+     * Добавляет значение ключа и соответствующий номер строки в дерево со сложностью O(log N).
+     *
+     * @param key значение индексируемой колонки
+     * @param rowIndex номер строки в таблице
+     */
     @Override
     @SuppressWarnings({"rawtypes", "unchecked"})
     public void insert(Object key, int rowIndex) {
@@ -60,6 +76,12 @@ public class TreeIndex implements Index {
         insert(newKey, rowIndex);
     }
 
+    /**
+     * Выполняет точечный поиск строк по точному равенству ключа (=) за O(log N).
+     *
+     * @param key искомое значение
+     * @return список индексов строк с данным значением (пустой, если не найдено)
+     */
     @Override
     public List<Integer> lookup(Object key) {
         Comparable<?> cKey = toComparable(key);
@@ -68,6 +90,14 @@ public class TreeIndex implements Index {
         return result != null ? Collections.unmodifiableList(result) : Collections.emptyList();
     }
 
+    /**
+     * Выполняет диапазонный поиск строк по операторам сравнения (&gt;, &lt;, &gt;=, &lt;=, !=).
+     * Использует методы headMap и tailMap дерева TreeMap для быстрого отсечения диапазонов за O(log N + K).
+     *
+     * @param value граничное значение диапазона
+     * @param operator оператор сравнения ("=", "!=", "<", "<=", ">", ">=")
+     * @return список индексов строк, удовлетворяющих диапазону
+     */
     @Override
     public List<Integer> range(Object value, String operator) {
         Comparable<?> cVal = toComparable(value);

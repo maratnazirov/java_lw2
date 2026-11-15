@@ -177,6 +177,9 @@ public class GuiWindow extends JFrame {
         setContentPane(mainPanel);
     }
 
+    /**
+     * Обновляет боковой список таблиц в пользовательском интерфейсе с отображением количества строк.
+     */
     private void refreshTablesList() {
         tablesListModel.clear();
         for (String name : db.getTableNames()) {
@@ -185,6 +188,10 @@ public class GuiWindow extends JFrame {
         }
     }
 
+    /**
+     * Считывает SQL-запрос из текстовой области, выполняет его через {@link QueryExecutor},
+     * замеряет длительность выполнения и отображает результат в табличной модели интерфейса.
+     */
     private void executeQuery() {
         String sql = queryArea.getText().trim();
         if (sql.isEmpty()) {
@@ -221,6 +228,12 @@ public class GuiWindow extends JFrame {
         }
     }
 
+    /**
+     * Преобразует полученные строки и заголовки в векторные структуры для отображения в компоненте {@link JTable}.
+     *
+     * @param headers список названий колонок
+     * @param rows    список строк результата
+     */
     private void displayData(List<String> headers, List<Row> rows) {
         Vector<String> colNames = new Vector<>(headers);
         Vector<Vector<Object>> data = new Vector<>();

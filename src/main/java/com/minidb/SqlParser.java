@@ -6,14 +6,23 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-// Рекурсивный нисходящий парсер SQL-запросов
+/**
+ * Рекурсивный нисходящий парсер SQL-запросов (DDL и DML).
+ */
 public class SqlParser {
 
     private List<Token> tokens;
     private int pos;
     private String originalSql;
 
-    // Разбор входной строки SQL в типизированный объект Statement
+    /**
+     * Выполняет синтаксический разбор входной строки SQL и возвращает типизированный объект Statement.
+     * Определяет тип инструкции по первому ключевому слову и делегирует разбор соответствующему методу.
+     *
+     * @param sql исходная строка SQL-запроса
+     * @return разобранный объект Statement (команда AST)
+     * @throws ParseException при синтаксической ошибке или неожиданном токене
+     */
     public Statement parse(String sql) {
         String trimmed = sql.trim();
         if (trimmed.endsWith(";")) {
@@ -48,7 +57,6 @@ public class SqlParser {
         }
     }
 
-    // Диспетчер CREATE TABLE / CREATE INDEX
     private Statement parseCreate() {
         String next = expectKeywordValue();
         switch (next) {
@@ -59,7 +67,12 @@ public class SqlParser {
         }
     }
 
-    // Разбор CREATE TABLE
+    /**
+     * Разбирает инструкцию создания таблицы CREATE TABLE:
+     * парсит имя таблицы, список колонок в круглых скобках и их ограничения.
+     *
+     * @return объект CreateTableStatement с метаданными схемы таблицы
+     */
     private CreateTableStatement parseCreateTable() {
         String tableName = expectIdentifierOrKeywordAsName();
         consume(TokenType.LPAREN, "(");
@@ -76,7 +89,11 @@ public class SqlParser {
         return new CreateTableStatement(tableName, columns);
     }
 
-    // Разбор определения колонки: имя тип [PRIMARY KEY] [NOT NULL]
+    /**
+     * Разбирает спецификацию отдельной колонки таблицы: имя, тип данных и флаги PRIMARY KEY / NOT NULL.
+     *
+     * @return объект ColumnDefinition с конфигурацией колонки
+     */
     private ColumnDefinition parseColumnDef() {
         String colName = expectIdentifierOrKeywordAsName();
         String typeToken = expectIdentifierOrKeywordAsName();
@@ -109,7 +126,6 @@ public class SqlParser {
         return new ColumnDefinition(colName, dataType, primaryKey, notNull);
     }
 
-    // Разбор DROP TABLE
     private DropTableStatement parseDrop() {
         consumeKeyword("TABLE");
         String tableName = expectIdentifierOrKeywordAsName();
@@ -117,7 +133,12 @@ public class SqlParser {
         return new DropTableStatement(tableName);
     }
 
-    // Разбор INSERT INTO
+    /**
+     * Разбирает инструкцию вставки INSERT INTO:
+     * поддерживает как явное указание целевых колонок, так и позиционную вставку значений по умолчанию.
+     *
+     * @return объект InsertStatement с именем таблицы, списком колонок и значениями
+     */
     private InsertStatement parseInsert() {
         consumeKeyword("INTO");
         String tableName = expectIdentifierOrKeywordAsName();
@@ -155,7 +176,12 @@ public class SqlParser {
         return new InsertStatement(tableName, columnNames, values);
     }
 
-    // Разбор SELECT
+    /**
+     * Разбирает запрос выборки SELECT:
+     * обрабатывает проекции колонок (или символ *), имя таблицы и необязательное условие WHERE.
+     *
+     * @return объект SelectStatement
+     */
     private SelectStatement parseSelect() {
         List<String> columns = new ArrayList<>();
 
@@ -182,7 +208,12 @@ public class SqlParser {
         return new SelectStatement(tableName, columns, where);
     }
 
-    // Разбор UPDATE
+    /**
+     * Разбирает инструкцию обновления UPDATE:
+     * парсит список пар колонка=значение и необязательное условие фильтрации WHERE.
+     *
+     * @return объект UpdateStatement
+     */
     private UpdateStatement parseUpdate() {
         String tableName = expectIdentifierOrKeywordAsName();
         consumeKeyword("SET");
@@ -204,7 +235,6 @@ public class SqlParser {
         return new UpdateStatement(tableName, assignments, where);
     }
 
-    // Разбор присваивания col = val
     private void parseAssignment(Map<String, Object> map) {
         String colName = expectIdentifierOrKeywordAsName();
         consume(TokenType.EQUALS, "=");
@@ -212,7 +242,11 @@ public class SqlParser {
         map.put(colName.toLowerCase(), value);
     }
 
-    // Разбор DELETE
+    /**
+     * Разбирает инструкцию удаления DELETE FROM с опциональным предикатом WHERE.
+     *
+     * @return объект DeleteStatement
+     */
     private DeleteStatement parseDelete() {
         consumeKeyword("FROM");
         String tableName = expectIdentifierOrKeywordAsName();
@@ -227,7 +261,12 @@ public class SqlParser {
         return new DeleteStatement(tableName, where);
     }
 
-    // Разбор CREATE INDEX
+    /**
+     * Разбирает инструкцию создания индекса CREATE INDEX:
+     * парсит имя индекса, целевую таблицу и индексируемую колонку.
+     *
+     * @return объект CreateIndexStatement
+     */
     private CreateIndexStatement parseCreateIndex() {
         String indexName = expectIdentifierOrKeywordAsName();
         consumeKeyword("ON");
@@ -239,7 +278,6 @@ public class SqlParser {
         return new CreateIndexStatement(indexName, tableName, columnName);
     }
 
-    // Разбор SHOW TABLES
     private Statement parseShow() {
         Token next = peek();
         if (next.getType() == TokenType.KEYWORD || next.getType() == TokenType.IDENTIFIER) {
@@ -249,7 +287,6 @@ public class SqlParser {
         return new ShowTablesStatement();
     }
 
-    // Разбор TABLE <name> или TABLE
     private Statement parseTable() {
         Token next = peek();
         if (next.getType() == TokenType.EOF || next.getType() == TokenType.SEMICOLON) {
@@ -260,7 +297,6 @@ public class SqlParser {
         return new SelectStatement(tableName, java.util.Collections.emptyList(), null);
     }
 
-    // Разбор DESCRIBE <name>
     private Statement parseDescribe() {
         Token next = peek();
         if (next.getType() == TokenType.KEYWORD && next.getValue().equalsIgnoreCase("TABLE")) {
@@ -271,7 +307,11 @@ public class SqlParser {
         return new DescribeTableStatement(tableName);
     }
 
-    // Разбор предиката условия WHERE: col op value
+    /**
+     * Разбирает условие секции WHERE в формате: [колонка] [оператор_сравнения] [значение_литерала].
+     *
+     * @return сконфигурированный объект WhereCondition
+     */
     private WhereCondition parseWhereCondition() {
         String colName = expectIdentifierOrKeywordAsName();
         String op      = parseOperator();
@@ -279,7 +319,6 @@ public class SqlParser {
         return new WhereCondition(colName.toLowerCase(), op, value);
     }
 
-    // Разбор оператора сравнения
     private String parseOperator() {
         Token t = advance();
         switch (t.getType()) {
@@ -294,7 +333,12 @@ public class SqlParser {
         }
     }
 
-    // Разбор литерала значения
+    /**
+     * Преобразует токен литерала в соответствующий типизированный Java-объект
+     * (Integer, Double, String, LocalDate, Boolean или null).
+     *
+     * @return типизированное значение литерала
+     */
     private Object parseValue() {
         Token t = advance();
         switch (t.getType()) {

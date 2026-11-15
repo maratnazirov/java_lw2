@@ -2,7 +2,9 @@ package com.minidb;
 
 import java.util.*;
 
-// Хэш-индекс на базе HashMap для точного поиска O(1)
+/**
+ * Хэш-индекс на базе HashMap для быстрого точечного поиска строк за константное время O(1).
+ */
 public class HashIndex implements Index {
 
     private final String tableName;
@@ -43,6 +45,12 @@ public class HashIndex implements Index {
         insert(newKey, rowIndex);
     }
 
+    /**
+     * Выполняет точечный поиск строк по значению ключа со средней сложностью O(1).
+     *
+     * @param key искомое значение
+     * @return список индексов строк с совпадающим значением
+     */
     @Override
     public List<Integer> lookup(Object key) {
         if (key == null) return Collections.emptyList();
@@ -50,6 +58,14 @@ public class HashIndex implements Index {
         return result != null ? Collections.unmodifiableList(result) : Collections.emptyList();
     }
 
+    /**
+     * Выполняет поиск по операторам сравнения:
+     * для хэш-индекса перебирает элементы карты, так как хэш-таблица не упорядочена.
+     *
+     * @param value граничное значение
+     * @param operator оператор сравнения
+     * @return список индексов строк
+     */
     @Override
     @SuppressWarnings({"unchecked", "rawtypes"})
     public List<Integer> range(Object value, String operator) {

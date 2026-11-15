@@ -10,7 +10,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
-// Реестр индексов MiniDB
+/**
+ * Центральный реестр для создания, хранения, обновления и восстановления индексов MiniDB.
+ */
 public class IndexManager {
 
     private static final String DESCRIPTORS_FILE = "indexes.json";
@@ -36,6 +38,15 @@ public class IndexManager {
         Files.createDirectories(indexDir);
     }
 
+    /**
+     * Создает и регистрирует новый экземпляр индекса (HashIndex или TreeIndex) для указанной таблицы и колонки.
+     *
+     * @param indexName уникальное логическое имя индекса
+     * @param tableName имя таблицы
+     * @param columnName индексируемая колонка
+     * @param indexType тип структуры данных ("HASH" или "TREE")
+     * @return инициализированный экземпляр Index
+     */
     public Index createIndex(String indexName, String tableName,
                              String columnName, String indexType) {
         String key   = canonicalKey(tableName, columnName);
@@ -57,7 +68,13 @@ public class IndexManager {
         return indexes.containsKey(canonicalKey(tableName, columnName));
     }
 
-    // Полное перестроение индекса по данным таблицы
+    /**
+     * Полностью перестраивает записи индекса, сканируя строки переданной таблицы.
+     * Очищает предыдущие данные и сопоставляет каждое значение колонки с его позицией (номером строки).
+     *
+     * @param index экземпляр индекса для перестроения
+     * @param table исходная таблица с актуальными строками
+     */
     public void rebuildIndex(Index index, Table table) {
         index.clear();
         List<Row> rows = table.getRows();
@@ -70,7 +87,14 @@ public class IndexManager {
         }
     }
 
-    // Добавление новой строки в существующие индексы таблицы
+    /**
+     * Обрабатывает вставку новой строки: извлекает значения индексируемых колонок
+     * и добавляет их в соответствующие активные индексы таблицы без полного перестроения.
+     *
+     * @param tableName имя таблицы, куда вставлена строка
+     * @param row добавленная строка данных
+     * @param rowIndex позиция (индекс) строки в таблице
+     */
     public void onInsert(String tableName, Row row, int rowIndex) {
         for (Map.Entry<String, Index> entry : indexes.entrySet()) {
             Index index = entry.getValue();
@@ -82,10 +106,23 @@ public class IndexManager {
         }
     }
 
+    /**
+     * Обрабатывает удаление строк: запускает полное перестроение индексов таблицы,
+     * так как при удалении позиции последующих строк сдвигаются.
+     *
+     * @param tableName имя таблицы
+     * @param table таблица после удаления строк
+     */
     public void onDelete(String tableName, Table table) {
         rebuildAllForTable(tableName, table);
     }
 
+    /**
+     * Обрабатывает обновление строк таблицы: перестраивает все индексы для синхронизации измененных значений.
+     *
+     * @param tableName имя таблицы
+     * @param table таблица в актуальном состоянии
+     */
     public void onUpdate(String tableName, Table table) {
         rebuildAllForTable(tableName, table);
     }
@@ -96,7 +133,13 @@ public class IndexManager {
         objectMapper.writeValue(file.toFile(), list);
     }
 
-    // Загрузка метаданных индексов из JSON и перестроение записей
+    /**
+     * Загружает сохраненные дескрипторы индексов из indexes.json при старте программы
+     * и восстанавливает их структуры в оперативной памяти по данным загруженных таблиц.
+     *
+     * @param tables карта загруженных таблиц (имя таблицы -> Table)
+     * @throws IOException при ошибках чтения файла метаданных
+     */
     public void loadAndRebuild(Map<String, Table> tables) throws IOException {
         Path file = indexDir.resolve(DESCRIPTORS_FILE);
         if (!Files.exists(file)) return;

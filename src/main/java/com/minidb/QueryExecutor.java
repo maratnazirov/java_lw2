@@ -5,7 +5,9 @@ import java.util.*;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
 
-// Диспетчер выполнения SQL-запросов
+/**
+ * Центральный диспетчер выполнения разобранных SQL-инструкций (Statement).
+ */
 public class QueryExecutor {
 
     private static final Logger LOG = Logger.getLogger(QueryExecutor.class.getName());
@@ -20,6 +22,13 @@ public class QueryExecutor {
         this.indexManager = indexManager;
     }
 
+    /**
+     * Выполняет переданную команду SQL (Statement), маршрутизируя её в соответствующий обработчик.
+     * Перехватывает исключения валидации и внутренние ошибки, оборачивая их в QueryResult.
+     *
+     * @param stmt разобранная SQL-инструкция (DDL или DML)
+     * @return результат выполнения запроса (сообщение, количество измененных строк или выборка данных)
+     */
     public QueryResult execute(Statement stmt) {
         try {
             switch (stmt.getType()) {
@@ -63,6 +72,15 @@ public class QueryExecutor {
         return new QueryResult(0, "Table '" + name + "' dropped.");
     }
 
+    /**
+     * Выполняет вставку строки в таблицу:
+     * строит объект Row, проверяет ограничение уникальности первичного ключа и NOT NULL через TableRepository,
+     * сохраняет изменения на диск и обновляет связанные индексы таблицы.
+     *
+     * @param stmt инструкция INSERT с именем таблицы, списком колонок и значениями
+     * @return результат операции со счетчиком добавленных строк
+     * @throws IOException при ошибках персистентной записи на диск
+     */
     private QueryResult executeInsert(InsertStatement stmt) throws IOException {
         Table table = requireTable(stmt.getTableName());
         Row row = buildRow(table, stmt.getColumnNames(), stmt.getValues());
@@ -78,6 +96,16 @@ public class QueryExecutor {
         return new QueryResult(1, "1 row inserted into '" + stmt.getTableName() + "'.");
     }
 
+    /**
+     * Формирует объект строки Row из переданных значений и сопоставляет их со схемой таблицы.
+     * Приводит типы значений и заполняет неуказанные колонки значениями null.
+     *
+     * @param table целевая таблица со схемой колонок
+     * @param columnNames явный список колонок (или null/пустой для позиционной вставки)
+     * @param values значения литералов в порядке следования колонок
+     * @return заполненный и приведенный к типам объект Row
+     * @throws IllegalArgumentException если количество колонок не совпадает или колонка неизвестна
+     */
     private Row buildRow(Table table, List<String> columnNames, List<Object> values) {
         Row row = new Row();
 
@@ -119,6 +147,14 @@ public class QueryExecutor {
         return row;
     }
 
+    /**
+     * Выполняет запрос выборки SELECT:
+     * анализирует наличие индекса по условию WHERE, направляя запрос в indexedSelect при наличии индекса
+     * или проводя полное сканирование таблицы (Full Table Scan). Выполняет проекцию на запрошенные колонки.
+     *
+     * @param stmt инструкция SELECT со списком колонок, таблицей и условием фильтрации
+     * @return объект QueryResult с результирующим набором строк и метаданными
+     */
     private QueryResult executeSelect(SelectStatement stmt) {
         Table table = requireTable(stmt.getTableName());
         WhereCondition where = stmt.getWhere();
@@ -139,6 +175,14 @@ public class QueryExecutor {
         return new QueryResult(selectedCols, projected);
     }
 
+    /**
+     * Выполняет оптимизированную выборку строк с использованием индекса таблицы:
+     * использует быстрый точечный поиск O(1) для оператора '=' или диапазонный поиск O(log N) в дереве.
+     *
+     * @param table целевая таблица
+     * @param where предикат условия с индексируемой колонкой
+     * @return отфильтрованный список строк, извлеченных по номерам позиций
+     */
     private List<Row> indexedSelect(Table table, WhereCondition where) {
         Index idx = indexManager.getIndex(table.getName(), where.getColumnName());
         List<Integer> rowIndices;
@@ -187,6 +231,14 @@ public class QueryExecutor {
         return result;
     }
 
+    /**
+     * Выполняет обновление строк UPDATE:
+     * фильтрует целевые строки по предикату WHERE, применяет новые значения с приведением типов,
+     * сохраняет изменения в хранилище и перестраивает индексы таблицы.
+     *
+     * @param stmt инструкция UPDATE с картой присваиваний и предикатом WHERE
+     * @return QueryResult с количеством обновленных записей
+     */
     private QueryResult executeUpdate(UpdateStatement stmt) {
         Table table = requireTable(stmt.getTableName());
         WhereCondition where = stmt.getWhere();
@@ -206,7 +258,13 @@ public class QueryExecutor {
         return new QueryResult(count, count + " row(s) updated in '" + stmt.getTableName() + "'.");
     }
 
-    // Приведение типов к числовым для INTEGER и FLOAT
+    /**
+     * Выполняет приведение значения к целевому типу данных схемы колонки (целые и вещественные числа).
+     *
+     * @param col определение колонки с типом данных
+     * @param raw исходное значение
+     * @return приведенное значение
+     */
     private Object coerceValue(ColumnDefinition col, Object raw) {
         if (raw == null || col == null) return raw;
         switch (col.getType()) {
@@ -222,6 +280,14 @@ public class QueryExecutor {
         return raw;
     }
 
+    /**
+     * Выполняет удаление строк DELETE:
+     * удаляет подходящие под условие WHERE строки, сохраняет таблицу на диск
+     * и полностью перестраивает индексы таблицы, так как смещаются позиции оставшихся строк.
+     *
+     * @param stmt инструкция DELETE с именем таблицы и условием WHERE
+     * @return QueryResult с количеством удаленных записей
+     */
     private QueryResult executeDelete(DeleteStatement stmt) {
         Table table = requireTable(stmt.getTableName());
         WhereCondition where = stmt.getWhere();
@@ -236,6 +302,15 @@ public class QueryExecutor {
         return new QueryResult(count, count + " row(s) deleted from '" + stmt.getTableName() + "'.");
     }
 
+    /**
+     * Создает и регистрирует новый индекс на таблице:
+     * определяет оптимальный тип индекса (TreeIndex для упорядоченных данных, HashIndex для остальных),
+     * строит структуру индекса по существующим строкам таблицы и сохраняет дескриптор в indexes.json.
+     *
+     * @param stmt инструкция CREATE INDEX
+     * @return QueryResult с подтверждением создания индекса
+     * @throws IOException при ошибках сохранения файла дескрипторов
+     */
     private QueryResult executeCreateIndex(CreateIndexStatement stmt) throws IOException {
         Table table = requireTable(stmt.getTableName());
         String col  = stmt.getColumnName();

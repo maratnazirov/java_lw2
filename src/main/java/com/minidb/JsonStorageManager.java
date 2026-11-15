@@ -11,7 +11,9 @@ import java.time.LocalDate;
 import java.util.*;
 import java.util.logging.Logger;
 
-// Хранилище таблиц в JSON с атомарной записью
+/**
+ * Файловое хранилище таблиц базы данных в формате JSON с защитой от сбоев (Crash-Safety).
+ */
 public class JsonStorageManager implements StorageManager {
 
     private static final Logger LOG = Logger.getLogger(JsonStorageManager.class.getName());
@@ -32,6 +34,13 @@ public class JsonStorageManager implements StorageManager {
                 .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     }
 
+    /**
+     * Сохраняет схему и строки таблицы на диск в формате JSON с использованием атомарной записи.
+     * Схема сохраняется в schema.json, а данные — в data.json в каталоге таблицы.
+     *
+     * @param table сохраняемая таблица
+     * @throws IOException при ошибках ввода-вывода
+     */
     @Override
     public void save(Table table) throws IOException {
         Path tableDir = tableDir(table.getName());
@@ -46,6 +55,15 @@ public class JsonStorageManager implements StorageManager {
         LOG.info("Saved table '" + table.getName() + "' (" + table.rowCount() + " rows).");
     }
 
+    /**
+     * Загружает таблицу с диска по её имени:
+     * считывает структуру схемы (schema.json), восстанавливает колонки и десериализует строки (data.json)
+     * с приведением типов (числа, строки, даты, булевы флаги).
+     *
+     * @param tableName имя загружаемой таблицы
+     * @return инициализированный объект Table с загруженными данными
+     * @throws IOException если файл схемы отсутствует или поврежден
+     */
     @Override
     public Table load(String tableName) throws IOException {
         Path tableDir = tableDir(tableName);
@@ -74,6 +92,13 @@ public class JsonStorageManager implements StorageManager {
         return table;
     }
 
+    /**
+     * Сканирует корневой каталог данных и загружает все существующие пользовательские таблицы,
+     * пропуская служебные директории индексов.
+     *
+     * @return список загруженных таблиц
+     * @throws IOException при ошибках доступа к файловой системе
+     */
     @Override
     public List<Table> loadAll() throws IOException {
         List<Table> result = new ArrayList<>();
@@ -148,6 +173,13 @@ public class JsonStorageManager implements StorageManager {
         return list;
     }
 
+    /**
+     * Преобразует строковые и числовые свойства из JSON в типизированный объект Row с учетом схемы колонок.
+     *
+     * @param rowMap сырые свойства строки из JSON
+     * @param columns список колонок схемы таблицы
+     * @return сформированный объект Row
+     */
     private Row deserializeRow(Map<String, Object> rowMap, List<ColumnDefinition> columns) {
         Row row = new Row();
         for (ColumnDefinition col : columns) {
@@ -169,7 +201,15 @@ public class JsonStorageManager implements StorageManager {
         }
     }
 
-    // Атомарная запись через .tmp файл для предотвращения повреждения при сбоях
+    /**
+     * Выполняет надежную атомарную запись:
+     * сначала записывает файл с расширением .tmp, а затем атомарно перемещает его с заменой целевого файла.
+     * Предотвращает повреждение базы при аварийном завершении работы приложения или сбое питания.
+     *
+     * @param target итоговый путь файла назначения
+     * @param content объект для сериализации в JSON
+     * @throws IOException при ошибках записи или замены файла
+     */
     private void atomicWrite(Path target, Object content) throws IOException {
         Path tmp = target.resolveSibling(target.getFileName() + ".tmp");
         try {

@@ -61,6 +61,12 @@ public class Table {
 
     public int rowCount() { return rows.size(); }
 
+    /**
+     * Вставляет новую запись в таблицу с предварительной валидацией ограничений целостности.
+     *
+     * @param row вставляемая строка данных
+     * @throws IllegalArgumentException при нарушении ограничений PRIMARY KEY или NOT NULL
+     */
     public void insertRow(Row row) {
         validateRow(row);
         rows.add(row);
@@ -70,12 +76,25 @@ public class Table {
         rows.add(row);
     }
 
+    /**
+     * Удаляет строки, удовлетворяющие переданному предикату фильтрации.
+     *
+     * @param predicate условие удаления строки
+     * @return количество удаленных строк
+     */
     public int deleteRows(java.util.function.Predicate<Row> predicate) {
         int before = rows.size();
         rows.removeIf(predicate);
         return before - rows.size();
     }
 
+    /**
+     * Обновляет значения полей в строках, удовлетворяющих заданному предикату.
+     *
+     * @param predicate   условие выбора строк для обновления
+     * @param assignments сопоставление имен обновляемых колонок и их новых значений
+     * @return количество обновленных строк
+     */
     public int updateRows(java.util.function.Predicate<Row> predicate,
                           Map<String, Object> assignments) {
         int count = 0;
@@ -90,6 +109,12 @@ public class Table {
         return count;
     }
 
+    /**
+     * Выбирает все строки таблицы, удовлетворяющие условию предиката.
+     *
+     * @param predicate условие отбора строк
+     * @return список отобранных строк
+     */
     public List<Row> selectRows(java.util.function.Predicate<Row> predicate) {
         List<Row> result = new ArrayList<>();
         for (Row row : rows) {
@@ -98,7 +123,15 @@ public class Table {
         return result;
     }
 
-    // Валидация ограничений PRIMARY KEY и NOT NULL
+    /**
+     * Выполняет проверку ограничений схемы таблицы перед вставкой новой записи:
+     * 1. Наличие значения в первичном ключе (PRIMARY KEY не может быть NULL).
+     * 2. Уникальность первичного ключа среди существующих записей таблицы.
+     * 3. Проверка ограничения NOT NULL для обязательных колонок таблицы.
+     *
+     * @param row проверяемая строка
+     * @throws IllegalArgumentException если нарушено любое из ограничений
+     */
     private void validateRow(Row row) {
         if (hasPrimaryKey()) {
             String pkName = getPrimaryKeyColumn().getName();

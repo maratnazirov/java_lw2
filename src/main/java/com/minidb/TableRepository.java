@@ -31,18 +31,37 @@ public class TableRepository implements TableDAO {
         return table;
     }
 
+    /**
+     * Вставляет запись в таблицу и синхронизирует изменения с дисковым хранилищем.
+     *
+     * @param row вставляемая строка
+     */
     @Override
     public void insert(Row row) {
         table.insertRow(row);
         flush();
     }
 
+    /**
+     * Выбирает строки таблицы, соответствующие предикату фильтрации.
+     * Если фильтр равен null, возвращаются все строки таблицы.
+     *
+     * @param filter условие фильтрации (или null для всех строк)
+     * @return список найденных строк
+     */
     @Override
     public List<Row> select(Predicate<Row> filter) {
         if (filter == null) return table.getRows();
         return table.selectRows(filter);
     }
 
+    /**
+     * Выполняет обновление строк по условию и сохраняет изменения на диск при наличии модификаций.
+     *
+     * @param filter      условие выбора строк (если null, обновляются все строки)
+     * @param assignments сопоставление полей и новых значений
+     * @return число фактически обновленных записей
+     */
     @Override
     public int update(Predicate<Row> filter, Map<String, Object> assignments) {
         Predicate<Row> effective = (filter != null) ? filter : r -> true;
@@ -51,6 +70,12 @@ public class TableRepository implements TableDAO {
         return count;
     }
 
+    /**
+     * Удаляет строки по условию и фиксирует изменения в постоянном хранилище.
+     *
+     * @param filter условие удаления (если null, удаляются все строки)
+     * @return число фактически удаленных записей
+     */
     @Override
     public int delete(Predicate<Row> filter) {
         Predicate<Row> effective = (filter != null) ? filter : r -> true;
@@ -59,6 +84,9 @@ public class TableRepository implements TableDAO {
         return count;
     }
 
+    /**
+     * Сохраняет текущее состояние таблицы в файл хранилища (атомарная запись на диск).
+     */
     private void flush() {
         try {
             storage.save(table);

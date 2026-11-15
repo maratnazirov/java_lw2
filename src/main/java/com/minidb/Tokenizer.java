@@ -6,13 +6,13 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-// Лексический анализатор SQL-запросов (разбивка на токены)
+/**
+ * Лексический анализатор SQL-запросов (разбивка на токены).
+ */
 public class Tokenizer {
 
-    // Шаблон даты формата YYYY-MM-DD
     private static final Pattern DATE_PATTERN = Pattern.compile("\\d{4}-\\d{2}-\\d{2}");
 
-    // Набор ключевых слов SQL
     private static final Set<String> KEYWORDS = new HashSet<>();
 
     static {
@@ -30,7 +30,15 @@ public class Tokenizer {
         }
     }
 
-    // Токенизация входной строки SQL
+    /**
+     * Выполняет лексический анализ входной строки SQL и преобразует её в список токенов.
+     * Распознает ключевые слова, строковые, числовые, булевы и дата-литералы (формат YYYY-MM-DD),
+     * а также составные операторы (!=, &lt;=, &gt;=) и разделители.
+     *
+     * @param sql исходный текст SQL-запроса
+     * @return упорядоченный список токенов, завершающийся токеном EOF
+     * @throws ParseException если обнаружен незакрытый строковый литерал или недопустимый символ
+     */
     public List<Token> tokenize(String sql) {
         List<Token> tokens = new ArrayList<>();
         int i = 0;
